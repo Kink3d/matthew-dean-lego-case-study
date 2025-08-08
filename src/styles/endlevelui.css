@@ -1,0 +1,40 @@
+.end-level-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.end-level-btn {
+  font-size: 24px;
+  color: #333333;
+  margin: 16px;
+  padding: 12px 32px;
+  background: rgb(255, 255, 255);
+  outline: 1px solid #d3d3d3;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+}
+
+.end-level-btn:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.end-level-modal {
+  background: rgb(255, 255, 255);
+  border-radius: 16px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  padding: 32px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 320px;
+  color: #333333;
+}
