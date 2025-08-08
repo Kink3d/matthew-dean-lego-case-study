@@ -136,7 +136,9 @@ export function useGameState(Levels: Level[]) {
     // Reset player position, movesTaken, and load level if level changes or retried
     useEffect(() => {
         if (levelLoaded) {
-            setPlayerPosition({ x: levelData.level.startPosition[0], y: 0, z: levelData.level.startPosition[1] });
+            const startPosition = { x: levelData.level.startPosition[0], y: 0, z: levelData.level.startPosition[1] };
+            prevPosRef.current = startPosition;
+            setPlayerPosition(startPosition);
             setMovesTaken(0);
             setPlayerMoved(false); // Reset playerMoved to ensure enemies move on first move
 
