@@ -1,7 +1,7 @@
 import * as FIBER from '@react-three/fiber'
 import { useContext, useEffect, useState } from 'react';
 import { useCameraState, useGameState } from './hooks'
-import { Camera, Goal, Lighting, MoveButtons, Player, TileMesh, Enemies, EndLevelUi, Bricks } from './components'
+import { Camera, Goal, Lighting, MoveButtons, Player, TileMesh, Enemies, EndLevelUi, Bricks, MenuUi, MenuButton } from './components'
 import { StateContext, StateContextData } from './context';
 import { Levels, InterfaceState } from './data'
 import './App.css'
@@ -88,10 +88,16 @@ function UserInterface() {
 
   const { interfaceState } = gameStateResult;
 
-  if (interfaceState === InterfaceState.Game) return null;
+  if (interfaceState === InterfaceState.Game) {
+    return <MenuButton gameStateResult={gameStateResult} />;
+  }
 
   if (interfaceState === InterfaceState.EndLevel) {
     return ( <EndLevelUi gameStateResult={gameStateResult} /> );
+  }
+
+  if (interfaceState === InterfaceState.Menu) {
+    return ( <MenuUi gameStateResult={gameStateResult} /> );
   }
   
   return null;

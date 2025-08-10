@@ -20,21 +20,29 @@ export function EndLevelUi(props: EndLevelUiProps) {
           <div>Perfect goal: {perfectMoves}</div>
         </div>
         <button
-          className="end-level-btn"
-          onClick={() => {
-            gameStateResult.setInterfaceState(InterfaceState.Game);
-            setLevelLoaded(true);
-            gameStateResult.setActiveLevelIndex(gameStateResult.activeLevelIndex); 
-          }}
-        >Retry</button>
-        <button
-          className="end-level-btn"
+          className="end-level-btn end-level-btn-full"
           onClick={() => {
             gameStateResult.setInterfaceState(InterfaceState.Game);
             setLevelLoaded(true);
             gameStateResult.setActiveLevelIndex((gameStateResult.activeLevelIndex + 1) % gameStateResult.Levels.length);
           }}
         >Next</button>
+        <div className="end-level-btn-row">
+          <button
+            className="end-level-btn end-level-btn-half"
+            onClick={() => {
+              gameStateResult.setInterfaceState(InterfaceState.Menu);
+            }}
+          >Menu</button>
+          <button
+            className="end-level-btn end-level-btn-half"
+            onClick={() => {
+              gameStateResult.setInterfaceState(InterfaceState.Game);
+              setLevelLoaded(true);
+              gameStateResult.setActiveLevelIndex(gameStateResult.activeLevelIndex); 
+            }}
+          >Retry</button>
+        </div>
       </div>
     </div>
   );

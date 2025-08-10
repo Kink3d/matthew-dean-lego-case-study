@@ -7,3 +7,5 @@ export * from "./goal";
 export * from "./enemies";
 export * from "./endlevelui";
 export * from "./bricks";
+export * from "./menuui";
+export * from "./menubutton";

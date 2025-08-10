@@ -8,7 +8,7 @@ I also decided that I needed a player retention mechanic so I went with tracking
 The app can bee ran locally as per a usual Vite project, or you can use the deployed version I have prepared.
 
 ### Deployed
-- Open `bit.ly/4mfJqu8` in a web browser (or on your phone!)
+- Open `bit.ly/4m9hiZn` in a web browser (or on your phone!)
 
 ### Local
 - Extract this ZIP file

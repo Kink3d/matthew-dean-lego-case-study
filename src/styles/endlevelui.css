@@ -27,14 +27,32 @@
   box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
 
+.end-level-btn-full {
+  width: calc(95% - 32px);
+  margin: 16px;
+}
+
+.end-level-btn-half {
+  width: calc(50% - 8px);
+  margin: 8px;
+}
+
+.end-level-btn-row {
+  display: flex;
+  width: calc(100% - 32px);
+  justify-content: space-between;
+  margin: 0 16px;
+}
+
 .end-level-modal {
   background: rgb(255, 255, 255);
   border-radius: 16px;
   box-shadow: 0 4px 32px rgba(0,0,0,0.18);
-  padding: 32px 48px;
+  padding: 32px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 320px;
+  min-width: 280px;
+  max-width: 320px;
   color: #333333;
 }
