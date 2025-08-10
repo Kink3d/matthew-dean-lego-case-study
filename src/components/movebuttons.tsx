@@ -9,11 +9,17 @@ export interface MoveButtonsProps {
 
 export function MoveButtons(props: MoveButtonsProps) {
   const { gameStateResult } = props;
-  const { playerPosition, playerTile, winAnimation, moveTo, moving, displayMoveButtons } = gameStateResult;
+  const { playerPosition, playerTile, winAnimation, moveTo, moving, displayMoveButtons, levelData, filledGapTiles } = gameStateResult;
   if (!displayMoveButtons) return null;
 
   const playerGridPos: [number, number] = [playerPosition.x, playerPosition.z];
-  if (!playerTile || !playerTile.nav || winAnimation) return null;
+  if (!playerTile || winAnimation) return null;
+  
+  // If player is on a path tile or filled gap tile, show navigation
+  const isOnTraversableTile = playerTile.type === 'path' || 
+    (playerTile.type === 'gap' && filledGapTiles.some(filled => filled[0] === playerGridPos[0] && filled[1] === playerGridPos[1]));
+  
+  if (!isOnTraversableTile || !playerTile.nav) return null;
   
   const nav = playerTile.nav;
   if (!nav) return;
@@ -28,20 +34,27 @@ export function MoveButtons(props: MoveButtonsProps) {
   return (
     <>
       {directions.map(({ dir, offset }) => {
-        if (nav[dir as keyof typeof playerTile.nav]) {
-          const pos: [number, number] = [playerGridPos[0] + offset[0], playerGridPos[1] + offset[1]];
-          return (
-            <MoveButton3D
-              key={dir}
-              position={pos}
-              direction={dir as any}
-              onClick={() => moveTo({ x: pos[0], y: 0, z: pos[1] })}
-              disabled={moving}
-            />
-          );
-        }
-        return null;
-      })}
+         const pos: [number, number] = [playerGridPos[0] + offset[0], playerGridPos[1] + offset[1]];
+         
+         // Check if target position is traversable (path tile or filled gap tile)
+         const targetTile = levelData.level.grid[pos[0]]?.[pos[1]];
+         const isTargetTraversable = targetTile?.type === 'path' || 
+           (targetTile?.type === 'gap' && filledGapTiles.some(filled => filled[0] === pos[0] && filled[1] === pos[1]));
+         
+         // Show move button if target is traversable, regardless of current tile's navigation
+         if (isTargetTraversable) {
+           return (
+             <MoveButton3D
+               key={dir}
+               position={pos}
+               direction={dir as any}
+               onClick={() => moveTo({ x: pos[0], y: 0, z: pos[1] })}
+               disabled={moving}
+             />
+           );
+         }
+         return null;
+       })}
     </>
   );
 };
@@ -52,7 +65,7 @@ function MoveButton3D(props: {
   onClick: () => void;
   disabled?: boolean;
 }) {
-  const texture = useLoader(THREE.TextureLoader, FileUtils.GetAbsolutePath("arrow.png"));
+  const texture = useLoader(THREE.TextureLoader, FileUtils.GetAbsolutePath("/assets/arrow.png"));
 
   const { position, direction, onClick, disabled } = props;
   const [y, x] = position;

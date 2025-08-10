@@ -8,10 +8,10 @@ export interface GoalProps {
   levelData: LevelData;
 }
 
-useGLTF.preload(FileUtils.GetAbsolutePath("goalcube.glb"));
+useGLTF.preload(FileUtils.GetAbsolutePath("/assets/goalcube.glb"));
 
 export function Goal(props: GoalProps) {
-  const goalcubeTexture = useLoader(THREE.TextureLoader, FileUtils.GetAbsolutePath("goalcube.png"));
+  const goalcubeTexture = useLoader(THREE.TextureLoader, FileUtils.GetAbsolutePath("/assets/goalcube.png"));
   
   // Fix texture color space
   goalcubeTexture.colorSpace = THREE.SRGBColorSpace;
@@ -20,7 +20,7 @@ export function Goal(props: GoalProps) {
   const { levelData } = props;
 
   const goalPosition = [levelData.level.goalPosition[0], 0.5, levelData.level.goalPosition[1]];
-  const goalCube = useGLTF(FileUtils.GetAbsolutePath("goalcube.glb"));
+  const goalCube = useGLTF(FileUtils.GetAbsolutePath("/assets/goalcube.glb"));
   const goalMesh = goalCube.scene.children.find(child => (child as any).isMesh) as THREE.Mesh;
   if (!goalMesh) {
     console.error("Goal mesh not found");

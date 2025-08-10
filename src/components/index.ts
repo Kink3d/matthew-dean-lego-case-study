@@ -6,3 +6,4 @@ export * from "./movebuttons";
 export * from "./goal";
 export * from "./enemies";
 export * from "./endlevelui";
+export * from "./bricks";

@@ -1,6 +1,7 @@
 export enum TileType {
   Empty = "empty",
   Path = "path",
+  Gap = "gap"
 }
 
 export interface Tile {
@@ -26,4 +27,7 @@ export const EmptyTile: Tile = {
 }
 export const PathTile: Tile = {
   type: TileType.Path
+}
+export const GapTile: Tile = {
+  type: TileType.Gap
 }

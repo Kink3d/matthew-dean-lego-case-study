@@ -1,7 +1,7 @@
 import * as FIBER from '@react-three/fiber'
 import { useContext, useEffect, useState } from 'react';
 import { useCameraState, useGameState } from './hooks'
-import { Camera, Goal, Lighting, MoveButtons, Player, TileMesh, Enemies, EndLevelUi } from './components'
+import { Camera, Goal, Lighting, MoveButtons, Player, TileMesh, Enemies, EndLevelUi, Bricks } from './components'
 import { StateContext, StateContextData } from './context';
 import { Levels, InterfaceState } from './data'
 import './App.css'
@@ -38,6 +38,30 @@ function Canvas(props: CanvasProps) {
   const gameStateResult = useGameState(Levels);
   const { levelData, levelLoaded } = gameStateResult;
 
+  // Adjust camera radius based on screen orientation
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      const isPortrait = window.innerHeight > window.innerWidth;
+      if (isPortrait) {
+        cameraStateResult.setRadius(8); // Larger radius for portrait mode
+      } else {
+        cameraStateResult.setRadius(5); // Default radius for landscape mode
+      }
+    };
+
+    // Set initial radius
+    handleOrientationChange();
+
+    // Listen for orientation changes
+    window.addEventListener('resize', handleOrientationChange);
+    window.addEventListener('orientationchange', handleOrientationChange);
+
+    return () => {
+      window.removeEventListener('resize', handleOrientationChange);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+    };
+  }, [cameraStateResult.setRadius]);
+
   useEffect(() => {
     setStateContext({ cameraStateResult, gameStateResult });
   }, [cameraStateResult, gameStateResult]);
@@ -48,11 +72,12 @@ function Canvas(props: CanvasProps) {
       <>
         <Camera cameraStateResult={cameraStateResult} gameStateResult={gameStateResult} fieldOfView={75} />
         <Lighting />
-        <TileMesh levelData={levelData} />
+        <TileMesh gameStateResult={gameStateResult} />
         <Enemies gameStateResult={gameStateResult} />
         <Player gameStateResult={gameStateResult} />
         <MoveButtons gameStateResult={gameStateResult} />
         <Goal levelData={levelData} />
+        <Bricks gameStateResult={gameStateResult} />
       </>
   )
 }

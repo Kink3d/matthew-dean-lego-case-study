@@ -1,5 +1,5 @@
 import { Enemy } from "./enemy";
-import { EmptyTile, PathTile, Tile, TileData } from "./tile";
+import { EmptyTile, GapTile, PathTile, Tile, TileData } from "./tile";
 
 export interface Level {
   startPosition: [number, number];
@@ -7,6 +7,7 @@ export interface Level {
   perfectMoves: number;
   grid: Grid;
   enemies: Enemy[];
+  bricks: Brick[];
 }
 
 export interface LevelData {
@@ -14,6 +15,10 @@ export interface LevelData {
   tileDatas: TileData[];
   size: [number, number];
   levelOrigin: [number, number];
+}
+
+export interface Brick {
+  startPosition: [number, number];
 }
 
 export type Grid = Tile[][];
@@ -29,7 +34,8 @@ export const Level1: Level = {
     [EmptyTile, PathTile, EmptyTile],
     [EmptyTile, PathTile, EmptyTile],
   ],
-  enemies: []
+  enemies: [],
+  bricks: []
 }
 
 export const Level2: Level = {
@@ -41,7 +47,8 @@ export const Level2: Level = {
     [EmptyTile, PathTile, EmptyTile],
     [EmptyTile, PathTile, PathTile],
   ],
-  enemies: []
+  enemies: [],
+  bricks: []
 }
 
 export const Level3: Level = {
@@ -53,7 +60,8 @@ export const Level3: Level = {
     [EmptyTile, EmptyTile, PathTile],
     [PathTile, PathTile, PathTile],
   ],
-  enemies: []
+  enemies: [],
+  bricks: []
 }
 
 export const Level4: Level = {
@@ -69,7 +77,8 @@ export const Level4: Level = {
   ],
   enemies: [
     { startPosition: [3, 0], initialDirection: [0, 1] }
-  ]
+  ],
+  bricks: []
 }
 
 export const Level5: Level = {
@@ -86,7 +95,8 @@ export const Level5: Level = {
   ],
   enemies: [
     { startPosition: [3, 2], initialDirection: [0, -1] }
-  ]
+  ],
+  bricks: []
 }
 
 export const Level6: Level = {
@@ -103,6 +113,59 @@ export const Level6: Level = {
   enemies: [
     { startPosition: [1, 3], initialDirection: [0, -1] },
     { startPosition: [3, 3], initialDirection: [0, -1] }
+  ],
+  bricks: []
+}
+
+export const Level7: Level = {
+  startPosition: [0, 0],
+  goalPosition: [2, 2],
+  perfectMoves: 4,
+  grid: [
+    [PathTile, PathTile, PathTile],
+    [EmptyTile, PathTile, EmptyTile],
+    [EmptyTile, GapTile, PathTile],
+  ],
+  enemies: [],
+  bricks: [
+    { startPosition: [0, 2] }
+  ]
+}
+
+export const Level8: Level = {
+  startPosition: [0, 3],
+  goalPosition: [3, 1],
+  perfectMoves: 9,
+  grid: [
+    [PathTile, PathTile, PathTile, PathTile, EmptyTile],
+    [EmptyTile, EmptyTile, PathTile, EmptyTile, EmptyTile],
+    [EmptyTile, EmptyTile, GapTile, PathTile, PathTile],
+    [EmptyTile, PathTile, GapTile, EmptyTile, EmptyTile],
+  ],
+  enemies: [],
+  bricks: [
+    { startPosition: [0, 0] },
+    { startPosition: [2, 4] }
+  ]
+}
+
+export const Level9: Level = {
+  startPosition: [0, 2],
+  goalPosition: [5, 2],
+  perfectMoves: 13,
+  grid: [
+    [EmptyTile, EmptyTile, PathTile, EmptyTile],
+    [PathTile, PathTile, PathTile, PathTile],
+    [PathTile, EmptyTile, PathTile, EmptyTile],
+    [PathTile, EmptyTile, PathTile, EmptyTile],
+    [GapTile, PathTile, PathTile, PathTile],
+    [EmptyTile, EmptyTile, PathTile, EmptyTile],
+  ],
+  enemies: [
+    { startPosition: [4, 1], initialDirection: [0, -1] },
+  ],
+  bricks: [
+    { startPosition: [1, 3] },
   ]
 }
 
@@ -113,5 +176,8 @@ export const Levels: Level[] = [
   Level3,
   Level4,
   Level5,
-  Level6
+  Level6,
+  Level7,
+  Level8,
+  Level9
 ]

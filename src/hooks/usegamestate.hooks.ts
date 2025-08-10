@@ -24,6 +24,14 @@ export interface GameStateResult {
     enemyRenderPositions: [number, number][];
     moveToEnemy: (enemyIndex: number, target: [number, number]) => void;
 
+    // Bricks
+    brickPositions: [number, number][]; // Tile positions of bricks
+    brickRenderPositions: [number, number, number][]; // Render positions of bricks (with offset)
+    pickedUpBricks: number[]; // Indices of bricks that have been picked up
+
+    // Gap Tiles
+    filledGapTiles: [number, number][]; // Positions of gap tiles that have been filled with bricks
+
     // Win
     win: boolean;
     winAnimation: boolean;
@@ -74,12 +82,144 @@ export function useGameState(Levels: Level[]) {
     const [playerScale, setPlayerScale] = useState(1);
     const deathAnimRef = useRef<number | null>(null);
     const [hasInitialized, setHasInitialized] = useState(false);
+    const [brickPositions, setBrickPositions] = useState<[number, number][]>([]);
+    const [brickRenderPositions, setBrickRenderPositions] = useState<[number, number, number][]>([]);
+    const [pickedUpBricks, setPickedUpBricks] = useState<number[]>([]);
+    const [filledGapTiles, setFilledGapTiles] = useState<[number, number][]>([]);
+    const [placedBricks, setPlacedBricks] = useState<number[]>([]); // Track which bricks have been placed in gaps
+    const gapFillRef = useRef<Set<string>>(new Set()); // Track which gaps have been filled this frame
 
     // Update playerTile whenever playerPosition changes
     useEffect(() => {
         const tile = levelData.tileDatas.find(td => td.position[0] === playerPosition.x && td.position[1] === playerPosition.z);
-        setPlayerTile(tile);
-    }, [playerPosition, levelData]);
+        
+        // If this is a gap tile that's been filled, treat it as a path tile with navigation
+        if (tile && tile.type === 'gap' && filledGapTiles.some(filled => filled[0] === tile.position[0] && filled[1] === tile.position[1])) {
+            const height = levelData.level.grid.length;
+            const width = levelData.level.grid[0].length;
+            const y = tile.position[0];
+            const x = tile.position[1];
+            
+            // Calculate navigation for filled gap tile
+            const nav = {
+                up: y > 0 && (levelData.level.grid[y - 1][x].type === 'path' || 
+                    (levelData.level.grid[y - 1][x].type === 'gap' && 
+                     filledGapTiles.some(filled => filled[0] === y - 1 && filled[1] === x))),
+                down: y < height - 1 && (levelData.level.grid[y + 1][x].type === 'path' || 
+                    (levelData.level.grid[y + 1][x].type === 'gap' && 
+                     filledGapTiles.some(filled => filled[0] === y + 1 && filled[1] === x))),
+                left: x > 0 && (levelData.level.grid[y][x - 1].type === 'path' || 
+                    (levelData.level.grid[y][x - 1].type === 'gap' && 
+                     filledGapTiles.some(filled => filled[0] === y && filled[1] === x - 1))),
+                right: x < width - 1 && (levelData.level.grid[y][x + 1].type === 'path' || 
+                    (levelData.level.grid[y][x + 1].type === 'gap' && 
+                     filledGapTiles.some(filled => filled[0] === y && filled[1] === x + 1)))
+            };
+            
+            setPlayerTile({ ...tile, nav });
+        } else {
+            setPlayerTile(tile);
+        }
+    }, [playerPosition, levelData, filledGapTiles]);
+
+    // Check for brick pickup when player moves
+    useEffect(() => {
+        if (winAnimation || deathAnimation) return; // Don't pick up during animations
+        
+        const playerPos: [number, number] = [playerPosition.x, playerPosition.z];
+        
+        // Check each brick to see if player is adjacent to it
+        brickPositions.forEach((brickPos, brickIndex) => {
+            // Skip if brick is already picked up
+            if (pickedUpBricks.includes(brickIndex)) return;
+            
+            // Skip if this brick has been placed in a gap
+            if (placedBricks.includes(brickIndex)) return;
+            
+            // Check if player is adjacent to brick (distance of 1)
+            const distance = Math.abs(playerPos[0] - brickPos[0]) + Math.abs(playerPos[1] - brickPos[1]);
+            if (distance === 1) {
+                // Pick up the brick
+                setPickedUpBricks(prev => [...prev, brickIndex]);
+            }
+        });
+    }, [playerPosition, brickPositions, placedBricks, winAnimation, deathAnimation]); // Added placedBricks to dependencies
+
+    // Check for gap filling when player moves
+    useEffect(() => {
+        if (winAnimation || deathAnimation) return; // Don't fill during animations
+        if (pickedUpBricks.length === 0) return; // Only fill if carrying a brick
+        
+        const playerPos: [number, number] = [playerPosition.x, playerPosition.z];
+        
+        // Clear the gap fill tracking for this frame
+        gapFillRef.current.clear();
+        
+        // Check each gap tile to see if player is adjacent to it
+        levelData.tileDatas.forEach((tileData) => {
+            if (tileData.type !== 'gap') return; // Only check gap tiles
+            
+            const gapPos: [number, number] = tileData.position;
+            const gapKey = `${gapPos[0]},${gapPos[1]}`;
+            
+            // Skip if gap is already filled or being filled this frame
+            if (filledGapTiles.some(filled => filled[0] === gapPos[0] && filled[1] === gapPos[1]) || 
+                gapFillRef.current.has(gapKey)) return;
+            
+            // Check if player is adjacent to gap (distance of 1)
+            const distance = Math.abs(playerPos[0] - gapPos[0]) + Math.abs(playerPos[1] - gapPos[1]);
+            if (distance === 1) {
+                gapFillRef.current.add(gapKey); // Mark this gap as being filled
+                
+                // Get the brick index that was picked up (the last one)
+                const brickIndexToPlace = pickedUpBricks[pickedUpBricks.length - 1];
+                
+                // Fill the gap with the brick and remove from picked up bricks in one operation
+                setFilledGapTiles(prev => [...prev, gapPos]);
+                setPlacedBricks(prev => [...prev, brickIndexToPlace]);
+                setPickedUpBricks(prev => prev.slice(0, -1));
+            }
+        });
+    }, [playerPosition, levelData, winAnimation, deathAnimation]); // Removed pickedUpBricks and filledGapTiles from dependencies
+
+    // Update brick render positions based on pickup state
+    useEffect(() => {
+        const renderPositions: [number, number, number][] = [];
+        const usedPositions = new Set<string>();
+        
+        // Add picked up bricks at player position (only if not placed in gaps)
+        pickedUpBricks.forEach(() => {
+            const posKey = `${playerPosition.x},${playerPosition.z}`;
+            if (!usedPositions.has(posKey)) {
+                renderPositions.push([playerPosition.x, 0.25, playerPosition.z]);
+                usedPositions.add(posKey);
+            }
+        });
+        
+        // Add unpicked bricks at their original positions
+        brickPositions.forEach((brickPos, brickIndex) => {
+            if (!pickedUpBricks.includes(brickIndex) && !placedBricks.includes(brickIndex)) {
+                const posKey = `${brickPos[0]},${brickPos[1]}`;
+                if (!usedPositions.has(posKey)) {
+                    renderPositions.push([brickPos[0], 0.25, brickPos[1]]);
+                    usedPositions.add(posKey);
+                }
+            }
+        });
+        
+        // Add bricks in filled gap tiles
+        filledGapTiles.forEach(gapPos => {
+            const posKey = `${gapPos[0]},${gapPos[1]}`;
+            if (!usedPositions.has(posKey)) {
+                renderPositions.push([gapPos[0], -0.25, gapPos[1]]);
+                usedPositions.add(posKey);
+            }
+        });
+        
+
+        
+        setBrickRenderPositions(renderPositions);
+    }, [brickPositions, pickedUpBricks, playerPosition, filledGapTiles]);
 
     // Track moves taken (increment only if not reset)
     useEffect(() => {
@@ -153,6 +293,14 @@ export function useGameState(Levels: Level[]) {
                 if (ref) cancelAnimationFrame(ref);
             });
             enemyAnimRefs.current = new Array(enemies.length).fill(null);
+
+            // Initialize bricks to their starting positions
+            const bricks = levelData.level.bricks;
+            setBrickPositions(bricks.map(b => b.startPosition));
+            setBrickRenderPositions(bricks.map(b => [b.startPosition[0], 0.25, b.startPosition[1]]));
+            setPickedUpBricks([]); // Reset picked up bricks
+            setFilledGapTiles([]); // Reset filled gap tiles
+            setPlacedBricks([]); // Reset placed bricks
         }
     }, [levelData, levelLoaded]);
 
@@ -164,6 +312,14 @@ export function useGameState(Levels: Level[]) {
         setEnemyRenderPositions(positions);
         setEnemyDirections(enemies.map(e => e.initialDirection));
         enemyAnimRefs.current = new Array(enemies.length).fill(null);
+
+        // Initialize bricks to their starting positions
+        const bricks = levelData.level.bricks;
+        setBrickPositions(bricks.map(b => b.startPosition));
+        setBrickRenderPositions(bricks.map(b => [b.startPosition[0], 0.25, b.startPosition[1]]));
+        setPickedUpBricks([]); // Reset picked up bricks
+        setFilledGapTiles([]); // Reset filled gap tiles
+        setPlacedBricks([]); // Reset placed bricks
     }, [levelData]);
 
     // Smooth enemy move logic
@@ -207,47 +363,32 @@ export function useGameState(Levels: Level[]) {
                     
                     const newPos: [number, number] = [pos[0] + direction[0], pos[1] + direction[1]];
                     
-                    // Check if new position is valid (has nav in that direction)
-                    const currentTile = levelData.tileDatas.find(td => td.position[0] === pos[0] && td.position[1] === pos[1]);
-                    if (!currentTile || !currentTile.nav) {
-                        // Flip direction and immediately move
-                        const newDirection = [-direction[0], -direction[1]] as [number, number];
-                        setEnemyDirections(prev => {
-                            const newDirs = [...prev];
-                            if (newDirs[i]) {
-                                newDirs[i] = newDirection;
-                            }
-                            return newDirs;
-                        });
-                        const immediateNewPos: [number, number] = [pos[0] + newDirection[0], pos[1] + newDirection[1]];
-                        moveToEnemy(i, immediateNewPos);
-                        return immediateNewPos;
-                    }
+                                                              // Check if new position is valid (has nav in that direction or is a filled gap tile)
+                     const currentTile = levelData.tileDatas.find(td => td.position[0] === pos[0] && td.position[1] === pos[1]);
+                     const newTile = levelData.tileDatas.find(td => td.position[0] === newPos[0] && td.position[1] === newPos[1]);
+                     
+                     // Check if new position is traversable (path tile or filled gap tile)
+                     const isNewPositionTraversable = newTile?.type === 'path' || 
+                         (newTile?.type === 'gap' && filledGapTiles.some(filled => filled[0] === newPos[0] && filled[1] === newPos[1]));
+                     
+                     if (!currentTile || !isNewPositionTraversable) {
+                         // Flip direction and immediately move
+                         const newDirection = [-direction[0], -direction[1]] as [number, number];
+                         setEnemyDirections(prev => {
+                             const newDirs = [...prev];
+                             if (newDirs[i]) {
+                                 newDirs[i] = newDirection;
+                             }
+                             return newDirs;
+                         });
+                         const immediateNewPos: [number, number] = [pos[0] + newDirection[0], pos[1] + newDirection[1]];
+                         moveToEnemy(i, immediateNewPos);
+                         return immediateNewPos;
+                     }
 
-                    // Check if we can move in the current direction
-                    const canMove = 
-                        (direction[0] === -1 && currentTile.nav.up) ||
-                        (direction[0] === 1 && currentTile.nav.down) ||
-                        (direction[1] === -1 && currentTile.nav.left) ||
-                        (direction[1] === 1 && currentTile.nav.right);
-
-                    if (canMove) {
-                        moveToEnemy(i, newPos);
-                        return newPos;
-                    } else {
-                        // Flip direction and immediately move
-                        const newDirection = [-direction[0], -direction[1]] as [number, number];
-                        setEnemyDirections(prev => {
-                            const newDirs = [...prev];
-                            if (newDirs[i]) {
-                                newDirs[i] = newDirection;
-                            }
-                            return newDirs;
-                        });
-                        const immediateNewPos: [number, number] = [pos[0] + newDirection[0], pos[1] + newDirection[1]];
-                        moveToEnemy(i, immediateNewPos);
-                        return immediateNewPos;
-                    }
+                     // If the new position is traversable, move there
+                     moveToEnemy(i, newPos);
+                     return newPos;
                 });
             });
         };
@@ -259,8 +400,7 @@ export function useGameState(Levels: Level[]) {
     const moveTo = (target: { x: number; y: number; z: number }) => {
         if (moving) return;
         setMoving(true);
-        let animId: number | null = null;
-        const speed = 0.001;
+        const speed = 0.15;
       
         function animate() {
           setPlayerRenderPosition(prev => {
@@ -276,12 +416,12 @@ export function useGameState(Levels: Level[]) {
             const nx = prev.x + (dx / dist) * speed;
             const nz = prev.z + (dz / dist) * speed;
             // Schedule next frame
-            animId = requestAnimationFrame(animate);
+            requestAnimationFrame(animate);
             return { x: nx, y: 0, z: nz };
           });
           
         }
-        animId = requestAnimationFrame(animate);
+        requestAnimationFrame(animate);
         setPlayerMoved(true);
       };
 
@@ -326,6 +466,14 @@ export function useGameState(Levels: Level[]) {
                 setEnemyPositions(levelData.level.enemies.map(e => e.startPosition));
                 setEnemyRenderPositions(levelData.level.enemies.map(e => e.startPosition));
                 setEnemyDirections(levelData.level.enemies.map(e => e.initialDirection));
+                
+                // Reset bricks to their starting positions
+                setBrickPositions(levelData.level.bricks.map(b => b.startPosition));
+                setBrickRenderPositions(levelData.level.bricks.map(b => [b.startPosition[0], 0.25, b.startPosition[1]]));
+                setPickedUpBricks([]); // Reset picked up bricks
+                setFilledGapTiles([]); // Reset filled gap tiles
+                setPlacedBricks([]); // Reset placed bricks
+                
                 setDisplayMoveButtons(true);
             }
         };
@@ -379,5 +527,9 @@ export function useGameState(Levels: Level[]) {
         isDead,
         deathAnimation,
         playerScale,
+        brickPositions,
+        brickRenderPositions,
+        pickedUpBricks,
+        filledGapTiles,
     };
 }
