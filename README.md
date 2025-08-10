@@ -15,4 +15,4 @@ The app can bee ran locally as per a usual Vite project, or you can use the depl
 - Open the directory in Terminal/CMD
 - Run `npm install`
 - Run `npm run dev`
-- Open `http://localhost:5173/casestudy1/` in a web browser
+- Open `http://localhost:5173/` in a web browser
